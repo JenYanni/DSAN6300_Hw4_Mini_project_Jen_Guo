@@ -1,0 +1,246 @@
+---
+title: "Air-Travel Guide for Stress-Free Experience"
+subtitle: "Hw4_mini_project_site_Jen_Guo"
+author: "Jen Guo"
+format: 
+  html:
+    embed-resources: true
+    code-fold: true
+toc: true
+---
+
+# Introduction
+
+Air-traveling can be quite anxiety inducing for some people. The air travel process, take-offs and landings, plane bookings, packing, canceled flights, and flight delays that interrupt your trip can be a stressful situation. Many unexpected things could happen that could detour your flight plan (McIntosh, 1998). Some factors may be completely out of your control such as bad weather and high volume air traffic. But there are still many factors that you can control to put yourself at an advantage to reduce stress in your air-travel plan. What if we could utilize data to evaluate airports and airlines to avoid delayed and canceled flights?
+
+# Problem Statement
+
+What information would be helpful to travelers avoid delayed and canceled flights in order to reduce stressful air-travel?
+
+In this mini project for DSAN 6300, I want to analyze my queried data to capture information related to airports and airlines in terms of their delayed and canceled flights. I plan on determining if there are patterns in days of the week, certain airlines, and types of airports in relation to delayed and canceled flights. Data about delayed and canceled flights would provide helpful guidelines for air-travelers to avoid those stressful situations. So that travelers can enjoy their flights and not have their travel plans be ruined since air traveling is costly and can impose health risks.
+
+# Analytical Questions
+
+These are the analytics questions I plan on answering to help travelers avoid delayed and canceled flights, so that their air-travel would be less stressful:
+
+1\) What is the best day of the week to fly?
+
+2\) What is an airline to avoid regarding flight delays?
+
+3\) What is an airport to avoid for flight delays?
+
+4\) What airport should be avoided for flight cancellations?
+
+5\) Are there certain geographical regions/ airport locations that have more flight cancellations?
+
+# Data Visuals
+
+```{r}
+#load r packages
+library(dplyr)
+library(plotly)
+
+#load the days of week flights data
+Daysofweek_flights <- read.csv("Data files/Hw4_mini_project_problem3_Jen_Guo_yg429 copy.csv")
+
+#load the max delay dataset 
+Max_delay <- read.csv("Data files/Hw4_mini_project_problem1_Jen_Guo_yg429 copy.csv")
+
+#load the average delay dataset 
+Avg_delay <- read.csv("Data files/Hw4_mini_project_problem5_Jen_Guo_yg429 copy.csv")
+#head(Avg_delay)
+
+#load the canceled flights dataset 
+Cancelled_flights <- read.csv("Data files/Hw4_mini_project_problem6b_Jen_Guo_yg429 copy.csv")
+
+```
+
+## 1) What is the best day of the week to fly?
+
+First, let's examine the data to determine what is the best day of the week to fly. As shown in the bar plot below, Saturday may be the best day of the week to fly because it has the lowest total number of flights out of all days of the week and thus lowest ranking in terms of count. The second preferred date of the week to fly would be Wednesday with the second highest total number of flights. Monday may be the worst day for flying due to the highest number of flights out of the days of the week.
+
+```{r}
+#create a bar plot of number of flights for each day of the week
+flightdays_fig <- plot_ly(data = Daysofweek_flights, 
+                          x = ~factor(Day_of_the_week, 
+                                      levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")), 
+                          y = ~Number_of_flights, type = "bar",
+                          text = ~paste("Day: ",Day_of_the_week, "<br>", "Total Number of Flights: ", Number_of_flights, "<br>", "Rank: ", rank_flights), hoverinfo = "text", textposition = "none")
+#add plot titles and axis 
+flightdays_fig <- flightdays_fig %>%
+    layout(title = "Number of Flights for Days of the Week by All Airlines",
+          xaxis = list(title = "Day of the Week"),
+          yaxis = list(title = "Total Number of Flights"))
+flightdays_fig
+```
+
+## 2) What is an airline to avoid regarding flight delays?
+
+Next, let's analyze the data to find which airline is probably the best to avoid in order to not have long delayed flights. As shown in the bar plot below, the American Airlines Inc. airline would likely be the airline to avoid since it has the highest average departure delays at 506.5 minutes. Being stuck on a plane or waiting for the flight departure for that long would drastically hinder traveling times - you could miss your connecting flight and arrive at your destination at a much later time than anticipated.
+
+```{r}
+#clean the average delay data by sepearating values in the Aiport_name and Airline_name columns
+library(tidyr)
+
+Avg_delay_separate <- Avg_delay %>% 
+    separate(Airport_name, into = c("City", "States"), sep = ",", remove = FALSE) %>%
+    separate(States, into = c("State", "Airport"), sep = ":", extra = "merge") %>%
+    separate(Airline_name, into  = c("Airline_name", "Airline_Code"), sep = ":") %>%
+    mutate(City = trimws(City),
+          State = trimws(State),
+          Airport = trimws(Airport))
+#head(Avg_delay_separate)
+```
+
+```{r}
+#create a bar plot of average flight delay by airline
+AvgDelay_fig <- plot_ly(data = Avg_delay_separate, 
+                          x = ~Airline_name,
+                          y = ~Average_departure_delay, type = "bar",
+                          text = ~paste("Arline name: ",Airline_name, "<br>", 
+                                        "Average Departure Delay: ", Average_departure_delay, "<br>", "Airport Name: ", Airport, "<br>", "State: ", State), hoverinfo = "text", textposition = "none", color = I("orange"))
+
+#add plot titles and axis 
+AvgDelay_fig <- AvgDelay_fig %>%
+    layout(title = "Highest Average Departure Delay By Airlines and Airports",
+          xaxis = list(title = "Airline Names"),
+          yaxis = list(title = "Average Departure Delay (minutes)"))
+AvgDelay_fig
+```
+
+## 3) What is an airport to avoid for flight delays?
+
+Along with airlines, let's observe what airport should be avoided in order to not have long delayed flight times. As shown in the grouped bar graph below, the South Bend International airport in Indianapolis that has the American Airlines Inc. airline should be avoided since it has the highest average departure delay at 506.5 minutes. If you happened to be at the South Bend International airport, it would be in your best interest to plan ahead such as booking a direct flight with no layovers in order to avoid missing a connected flight.
+
+After observing these delayed flights data, it leads to wonder if those delayed flights have any patterns with flights that get canceled.
+
+```{r}
+#create a grouped bar chart of flight delays and airports
+AvgDelay_fig2 <- plot_ly(data = Avg_delay_separate, 
+                          x = ~Airport,
+                          y = ~Average_departure_delay, type = "bar",
+                         color = ~Airline_name,
+                          text = ~paste("Arline name: ",Airline_name, "<br>", 
+                                        "Average Departure Delay: ", Average_departure_delay, "<br>", "Airport Name: ", Airport, "<br>", "State: ", State), hoverinfo = "text", textposition = "none")
+
+
+#add plot titles and axis 
+AvgDelay_fig2 <- AvgDelay_fig2 %>%
+    layout(title = "Highest Average Departure Delay By Airports",
+           barmode = "group",
+          xaxis = list(title = "Airports"),
+          yaxis = list(title = "Average Departure Delay (minutes)"))
+AvgDelay_fig2
+```
+
+## 4) What airport should be avoided for flight cancellations?
+
+Based on the bar graph below, the Dallas/Fort Worth International airport in Dallas/ Fort Worth, Texas had the highest number of canceled flights. The airport had 342 canceled flights that were due to weather reasons. Thus, it would be to your best interest to not choose the Dallas/Fort Worth International airport for departure flights since they have frequent canceled flights.
+
+```{r}
+#clean Cancelled_flights data by separating values in the Airport_name column 
+Cancelled_flights_sep <- Cancelled_flights %>%
+    separate(Airport_name, into = c("City", "States"), sep = ",", remove = FALSE) %>%
+    separate(States, into = c("State", "Airport"), sep = ":", extra = "merge") %>%
+    mutate(City = trimws(City),
+          State = trimws(State),
+          Airport = trimws(Airport))
+```
+
+```{r}
+Canceledflights_fig <- plot_ly(data = Cancelled_flights_sep, 
+                          x = ~Airport,
+                          y = ~Number_of_cancellations, type = "bar",
+                          text = ~paste("Airport name: ",Airport, "<br>", 
+                                         "City: ", City, "<br>", "State: ", State, "<br>", "Cancellation_reason: ", Cancellation_reason, "<br>", "Number of Cancelation: ", Number_of_cancellations), hoverinfo = "text", textposition = "none", color = ~Cancellation_reason)
+
+#add plot titles and axis 
+Canceledflights_fig <- Canceledflights_fig %>%
+    layout(title = "Number of Canceled Flights by Airports",
+          xaxis = list(title = "Airport Names"),
+          yaxis = list(title = "Number of Canceled Flights"),
+          barmode = "stack")
+Canceledflights_fig
+```
+
+## 
+
+## 5) Are there certain geographical regions/ airport locations that have more flight cancellations?
+
+In the third visual, we noticed that airports located in Massachusetts and Texas had more frequent airports with airlines that had high average departure times. Which makes us more curious to know if flight cancellations had patterns related to certain geographical locations?
+
+We can observe the locations of the airports, the number of canceled flights from airports, and the reason for flight cancellations in the geographic US map with markers below. The bubble map shows the different cancellation reason by color, which are carrier, national air system, and due to weather. The size of the bubble for each marker of airport location shows the number of flight cancellations.
+
+Coresponding with the bar chart above, the Dallas/ For Worth International airport in Dallas, Fort Worth, Texas had the highest number of flight cancellations with reason due to weather. Other airport locations with high number of flight cancellations can be found in the state of California, Florida, and along the Northeast coast of the US map. You can also notice airports in landlocked areas/ midwest regions tended to have more frequent flight cancellations due to weather. Airport near the west coast and east cost had more frequent cancellations due to carrier issues.
+
+Overall, there wasn't a certain geographic region where airports with canceled flights clustered at. Though some states like Texas, California, and Florida had slightly more airports with canceled flights. The airports with canceled flights were spread throughout the US. Thus, it would be best to always plan ahead and keep in mind of potential canceled flights at airports throughout the US.
+
+```{r}
+library(tidygeocoder)
+#create new column Location to store airport city and state by merging the City and State columns
+Cancelled_flights_sep2 <- Cancelled_flights_sep %>%
+    unite("Location", City, State, sep = ", ", remove = FALSE) %>%
+distinct(Location) %>%
+geocode(Location, method = "osm", lat = lat, long = lon) #get latitude and longtitude of the airport locations
+
+```
+
+```{r}
+#join lat and long data with the cancelled flights data 
+map_cancelled_flights <- Cancelled_flights_sep %>%
+    unite("Location", City, State, sep = ", ", remove = FALSE) %>%
+    left_join(Cancelled_flights_sep2, by = "Location")
+```
+
+```{r}
+#create US map with markers for airport locations with canceled flights 
+g <- list(scope = 'usa',
+         projection = list(type = 'albers usa'),
+         showland = TRUE,
+         landcolor = "rgb(240, 240, 240)",
+         subunitwidth = 1,
+         countrywidth = 1,
+         subunitcolor = "white", 
+         countrycolor = "white")
+
+map_fig <- plot_geo(map_cancelled_flights)
+
+map_fig <- map_fig %>%
+    add_markers(x = ~lon, y = ~lat,
+               size = ~Number_of_cancellations,
+               color = ~Cancellation_reason,
+               hoverinfo = "text",
+               text = ~paste("Airport name: ",Airport, "<br>", 
+                      "Location: ", Location, "<br>", "Cancellation_reason: ", Cancellation_reason, "<br>", "Number of Cancelation: ", Number_of_cancellations),
+                marker = list(sizemode = "area", opacity = 0.7))
+
+map_fig <- map_fig %>%
+           layout(title = "US Airports with Canceled Flights", geo = g)
+map_fig           
+```
+
+# Findings and Interpretations
+
+One of the main strategies to decrease stress for air-travel was to figure which day of the week would be best to fly. We found that Saturday would be a good option because it has the lowest total number of flights out of all days of the week. A lower flight count could mean less crowding in the airport and less air traffic, which may lower chances of flight delays. Less congestion in the air may prevent further delays when one flight is late on schedule. However, it's also best to keep in mind weather changes, seasonality, and holiday period (Lupini, 2025).
+
+Another main item to know to decrease air-travel stress is to avoid airlines that have poor performances such as airlines with frequent flight delays. Based on the data, we found that the American Airlines Inc. airline should be avoided since it has the highest average departure delays at 506.5 minutes. Departure delays would cause lots of stress because it creates uncertainty and disrupts your travel plans. Missing a connecting flight or arriving late to your destination due to delays would be frustrating. Airlines like Americal Airlines Inc. having high departure delays may be due to staffing shortages, weather issues, system outages or technical glitches (Tronco, 2025). Sometimes airlines are not honest with their reasoning for delays, so it would be best to avoid poor performing airlines.
+
+Along with airlines, it's also good to be aware of airports that have frequent flight delays. The data showed that the South Bend International airport in Indianapolis that has the American Airlines Inc. airline had the highest average departure delay at 506.5 minutes. Delays in airports are also caused by many factors such as weather, air traffic, mechanical breakdowns, staffing. Sometimes airports gets more congested due to peak travel seasons and frequent delays (Anthony, 2025). Thus, it's best to practice precautions in busy airports such as the South Bend International airport to have less stressful travel experiences.
+
+Since frequent flights delays can lead to flight cancellations, it would be interesting to observe what airports have high frequency of flight cancellations. The data showed that the Dallas/Fort Worth International airport in Dallas/ Fort Worth, Texas had the highest number of canceled flights. The airport had 342 canceled flights that were due to weather reasons. Cancelled flights can be very stressful because it puts people into uncertain situations regarding how they can reach their destination and if they are stuck in the airport overnight (Tronco, 2025). Thus, it would be best to have back up options if you are ever at the Dallas/Fort Worth International airport.
+
+Lastly, it would be suitable to know if airports in certain geographical locations tended to have more canceled flights. Based on the data and bubble map visual, we found that some states like Texas, California, and Florida had slightly more airports with canceled flights. Common reasons for canceled flights were due to weather and carrier issues. Thus, it would be best to be precautious and aware whenever you are at airports in those three specified states for safety.
+
+# Conclusion
+
+Main insights from the data included preferred days of the week to fly, airports and airlines to avoid for flight delays, airports to avoid for flight cancellations, and airports in certain geographical areas to be precatious at for stress reasons. We were able to determine Saturday may be the best day of the week to fly because it has the lowest total number of flights out of all days of the week. The American Airlines Inc. airline and the South Bend International airport in Indianapolis are best to avoid since the airline and airport have high numbers of flight delays. In addition, it would be best to plan ahead if you are at the Dallas/Fort Worth International airport in Dallas/ Fort Worth, Texas due to high numbers of flight cancellations. Lastly, be alert and stay organized whenever you are at airports in Texas, California, and Florida due to high numbers of canceled flights. By following these guidlines and suggestions, you can reduce stress in your travel plans and be able to have joyful and safe travel experiences.
+
+# Sources
+
+McIntosh, I B et al. “Anxiety and health problems related to air travel.” *Journal of travel medicine* vol. 5,4 (1998): 198-204. doi:10.1111/j.1708-8305.1998.tb00507.x
+
+Lupini, Caroline. “The Best Days to Fly for Fewer Delays and Cancellations.” *Booking.com*, 5 Aug. 2025, <https://www.booking.com/guides/article/flights/the-best-days-to-fly-for-fewer-delays-and-cancellations.html>
+
+Tronco, Fernanda. “American Airlines Makes Deeper Cuts Amid Flight Cancellations.” *TheStreet*, 6 Nov. 2025, <https://www.thestreet.com/travel/american-airlines-makes-deeper-cuts-amid-flight-cancellations>
+
+Anthony, Lisa. “Navigating Airport Travel Delays in 2026.” *Squaremouth*, 7 Nov. 2025, <https://www.squaremouth.com/travel-advice/airport-travel-delays#:~:text=Some%20causes%20of%20airport%20delays%20include:%20>*,at%20the%20airport%20*%20Downloading%20airline%20apps

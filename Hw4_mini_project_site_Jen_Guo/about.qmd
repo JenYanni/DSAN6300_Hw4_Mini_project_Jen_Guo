@@ -1,0 +1,10 @@
+---
+title: "About"
+author: Jen Guo
+---
+
+Hello, my name is Jen Guo (yg429).
+
+In this mini project for DSAN 6300, I wanted to analyze my queried data results to capture information about airports and airlines. I wanted to determine patterns in flight delays and cancellations to help travelers have a less stressful travel experience since air-travel can be costly and worrisome.
+
+In this project, I wanted to answer if there are patterns in days of the week, certain airlines, and types of airports in relation to delayed and canceled flights. I used data from the al_perf table and the tables from the dimensions tables folder such as airports, airlines, and cancellation tables in my queries to get these flight data.
